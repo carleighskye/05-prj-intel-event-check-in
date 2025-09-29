@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Progress bar and goal must be defined before use
   const progressBar = document.getElementById("progressBar");
   const attendanceGoal = 50;
+  const attendeeList = document.getElementById("attendeeList");
 
   // Load saved data from localStorage
   let totalAttendees = 0;
@@ -19,8 +20,10 @@ document.addEventListener("DOMContentLoaded", function () {
     zero: 0,
     power: 0,
   };
+  let attendees = [];
   const savedTotal = localStorage.getItem("totalAttendees");
   const savedTeams = localStorage.getItem("teamCounts");
+  const savedAttendees = localStorage.getItem("attendees");
   if (savedTotal !== null) {
     totalAttendees = parseInt(savedTotal, 10);
   }
@@ -31,6 +34,33 @@ document.addEventListener("DOMContentLoaded", function () {
         teamCounts = parsed;
       }
     } catch (e) {}
+  }
+  if (savedAttendees !== null) {
+    try {
+      const parsed = JSON.parse(savedAttendees);
+      if (Array.isArray(parsed)) {
+        attendees = parsed;
+      }
+    } catch (e) {}
+  }
+
+  function renderAttendeeList() {
+    attendeeList.innerHTML = "";
+    attendees.forEach(function (att) {
+      const li = document.createElement("li");
+      li.textContent = att.name;
+      const badge = document.createElement("span");
+      badge.className = `team-badge ${att.team}`;
+      if (att.team === "water") {
+        badge.textContent = "Team Water Wise";
+      } else if (att.team === "zero") {
+        badge.textContent = "Team Net Zero";
+      } else if (att.team === "power") {
+        badge.textContent = "Team Renewables";
+      }
+      li.appendChild(badge);
+      attendeeList.appendChild(li);
+    });
   }
 
   // Update UI with saved values
@@ -43,6 +73,7 @@ document.addEventListener("DOMContentLoaded", function () {
     percent = 100;
   }
   progressBar.style.width = `${percent}%`;
+  renderAttendeeList();
 
   checkInForm.addEventListener("submit", function (event) {
     event.preventDefault();
@@ -61,6 +92,9 @@ document.addEventListener("DOMContentLoaded", function () {
       } else if (team === "power") {
         powerCount.textContent = teamCounts.power;
       }
+      // Add attendee to list
+      attendees.push({ name: name, team: team });
+      renderAttendeeList();
       // Update progress bar
       let percent = (totalAttendees / attendanceGoal) * 100;
       if (percent > 100) {
@@ -70,6 +104,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Save to localStorage
       localStorage.setItem("totalAttendees", totalAttendees);
       localStorage.setItem("teamCounts", JSON.stringify(teamCounts));
+      localStorage.setItem("attendees", JSON.stringify(attendees));
 
       // Celebration message if goal reached
       if (totalAttendees >= attendanceGoal) {
